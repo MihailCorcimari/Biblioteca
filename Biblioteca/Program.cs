@@ -27,6 +27,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 
 builder.Services.AddScoped<IBookRepository, BookRepository>();
+builder.Services.AddScoped<IReaderRepository, ReaderRepository>();
 
 var app = builder.Build();
 

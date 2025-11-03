@@ -1,0 +1,43 @@
+﻿@model IEnumerable<Biblioteca.Models.Reader>
+@{
+    ViewData["Title"] = "Leitores";
+}
+
+<h1 class="mb-4">@ViewData["Title"]</h1>
+
+@if (!Model.Any())
+{
+    <p class="alert alert-info">Ainda não existem leitores registados.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model.First().FullName)</th>
+                    <th>@Html.DisplayNameFor(model => model.First().ReaderCode)</th>
+                    <th>Email</th>
+                    <th>@Html.DisplayNameFor(model => model.First().PhoneNumber)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var reader in Model)
+                {
+                    <tr>
+                        <td>@reader.FullName</td>
+                        <td>@reader.ReaderCode</td>
+                        <td>@reader.ApplicationUser?.Email</td>
+                        <td>@reader.PhoneNumber</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary me-1" asp-action="Details" asp-route-id="@reader.Id">Detalhes</a>
+                            <a class="btn btn-sm btn-outline-primary me-1" asp-action="Edit" asp-route-id="@reader.Id">Editar</a>
+                            <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@reader.Id">Apagar</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

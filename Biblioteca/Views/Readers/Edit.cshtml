@@ -1,0 +1,58 @@
+﻿@model Biblioteca.Models.ReaderViewModels.ReaderInputModel
+@{
+    ViewData["Title"] = "Editar leitor";
+    var statusMessage = ViewData["StatusMessage"] as string;
+}
+
+<h1 class="mb-4">@ViewData["Title"]</h1>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert alert-success">@statusMessage</div>
+}
+
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ReaderCode" class="form-label"></label>
+        <input asp-for="ReaderCode" class="form-control" readonly />
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PhoneNumber" class="form-label"></label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="BirthDate" class="form-label"></label>
+        <input asp-for="BirthDate" class="form-control" />
+        <span asp-validation-for="BirthDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ProfileImageUrl" class="form-label"></label>
+        <input asp-for="ProfileImageUrl" class="form-control" />
+        <span asp-validation-for="ProfileImageUrl" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar alterações</button>
+    <a class="btn btn-secondary ms-2" asp-action="Index">Cancelar</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,8 +1,10 @@
 ﻿using Biblioteca.Models;
 using Biblioteca.Models.AccountViewModels;
+using Biblioteca.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection.PortableExecutable;
 
 namespace Biblioteca.Controllers
 {
@@ -12,15 +14,18 @@ namespace Biblioteca.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IReaderRepository _readerRepository;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            IReaderRepository readerRepository)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
+            _readerRepository = readerRepository;
         }
 
         [HttpGet("Login")]
@@ -83,6 +88,7 @@ namespace Biblioteca.Controllers
             {
                 UserName = model.Email,
                 Email = model.Email,
+                PhoneNumber = model.PhoneNumber,
                 EmailConfirmed = true
             };
 
@@ -91,6 +97,7 @@ namespace Biblioteca.Controllers
             {
                 await EnsureRoleExistsAsync(RoleNames.Reader);
                 await _userManager.AddToRoleAsync(user, RoleNames.Reader);
+                await CreateReaderProfileAsync(user, model);
                 await _signInManager.SignInAsync(user, isPersistent: false);
                 return RedirectToLocal(returnUrl);
             }
@@ -259,6 +266,19 @@ namespace Biblioteca.Controllers
             {
                 await _roleManager.CreateAsync(new IdentityRole(roleName));
             }
+        }
+
+        private async Task CreateReaderProfileAsync(ApplicationUser user, RegisterViewModel model)
+        {
+            var reader = new Reader
+            {
+                ApplicationUserId = user.Id,
+                FullName = model.FullName,
+                ReaderCode = Reader.GenerateReaderCode(),
+                PhoneNumber = model.PhoneNumber
+            };
+
+            await _readerRepository.AddAsync(reader);
         }
     }
 }

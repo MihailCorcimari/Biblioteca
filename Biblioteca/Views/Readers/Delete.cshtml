@@ -1,0 +1,24 @@
+﻿@model Biblioteca.Models.Reader
+@{
+    ViewData["Title"] = "Apagar leitor";
+}
+
+<h1 class="mb-4">@ViewData["Title"]</h1>
+
+<div class="alert alert-warning">
+    <p>Tem a certeza que pretende remover o registo do leitor <strong>@Model.FullName</strong>?</p>
+    <p>Esta ação não remove a conta de utilizador associada.</p>
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.ReaderCode)</dt>
+    <dd class="col-sm-9">@Model.ReaderCode</dd>
+    <dt class="col-sm-3">Email</dt>
+    <dd class="col-sm-9">@Model.ApplicationUser?.Email</dd>
+</dl>
+
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Confirmar</button>
+    <a class="btn btn-secondary ms-2" asp-action="Index">Cancelar</a>
+</form>
