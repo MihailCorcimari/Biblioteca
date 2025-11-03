@@ -1,5 +1,6 @@
 using Biblioteca.Models;
 using Biblioteca.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Biblioteca.Controllers
@@ -15,6 +16,7 @@ namespace Biblioteca.Controllers
         }
 
         // GET: Livros
+        [AllowAnonymous]
         [HttpGet("")]
         public async Task<IActionResult> Index()
         {
@@ -23,6 +25,7 @@ namespace Biblioteca.Controllers
         }
 
         // GET: Livros/Detalhes/5
+        [AllowAnonymous]
         [HttpGet("Detalhes/{id}")]
         public async Task<IActionResult> Details(int? id)
         {
@@ -39,6 +42,7 @@ namespace Biblioteca.Controllers
         }
 
         // GET: Livros/Criar
+        [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Staff)]
         [HttpGet("Criar")]
         public IActionResult Create()
         {
@@ -46,6 +50,7 @@ namespace Biblioteca.Controllers
         }
 
         // POST: Livros/Criar
+        [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Staff)]
         [HttpPost("Criar")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Title,Author,PublicationDate")] Book book)
@@ -59,6 +64,7 @@ namespace Biblioteca.Controllers
         }
 
         // GET: Livros/Editar/5
+        [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Staff)]
         [HttpGet("Editar/{id}")]
         public async Task<IActionResult> Edit(int? id)
         {
@@ -75,6 +81,7 @@ namespace Biblioteca.Controllers
         }
 
         // POST: Livros/Editar/5
+        [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Staff)]
         [HttpPost("Editar/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Author,PublicationDate")] Book book)
@@ -93,6 +100,7 @@ namespace Biblioteca.Controllers
         }
 
         // GET: Livros/Apagar/5
+        [Authorize(Roles = RoleNames.Administrator)]
         [HttpGet("Apagar/{id}")]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -109,6 +117,7 @@ namespace Biblioteca.Controllers
         }
 
         // POST: Livros/Apagar/5
+        [Authorize(Roles = RoleNames.Administrator)]
         [HttpPost("Apagar/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
