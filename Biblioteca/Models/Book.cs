@@ -1,4 +1,5 @@
 using System;
+using  System.Collections.Generic;
 
 namespace Biblioteca.Models
 {
@@ -8,5 +9,6 @@ namespace Biblioteca.Models
         public string Title { get; set; } = string.Empty;
         public string Author { get; set; } = string.Empty;
         public DateTime? PublicationDate { get; set; }
+        public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
     }
 }

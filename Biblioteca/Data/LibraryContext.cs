@@ -13,6 +13,7 @@ namespace Biblioteca.Data
 
         public DbSet<Book> Books => Set<Book>();
         public DbSet<Reader> Readers => Set<Reader>();
+        public DbSet<Reservation> Reservations => Set<Reservation>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -27,6 +28,26 @@ namespace Biblioteca.Data
                     .WithOne(u => u.ReaderProfile)
                     .HasForeignKey<Reader>(r => r.ApplicationUserId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            builder.Entity<Reservation>(entity =>
+            {
+                entity.Property(r => r.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(32);
+
+                entity.Property(r => r.ReservedAt)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.HasOne(r => r.Book)
+                    .WithMany(b => b.Reservations)
+                    .HasForeignKey(r => r.BookId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(r => r.Reader)
+                    .WithMany(re => re.Reservations)
+                    .HasForeignKey(r => r.ReaderId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

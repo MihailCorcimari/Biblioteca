@@ -1,0 +1,42 @@
+﻿@model IEnumerable<Biblioteca.Models.Reservation>
+@{
+    ViewData["Title"] = "As minhas reservas";
+    var readerName = ViewData["ReaderName"] as string ?? "";
+}
+
+<h1>As minhas reservas</h1>
+@if (!string.IsNullOrEmpty(readerName))
+{
+    <p>Reservas associadas a <strong>@readerName</strong>.</p>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Ainda não existem reservas registadas.</div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Livro</th>
+                <th>Data de início</th>
+                <th>Data de fim</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Book?.Title</td>
+                    <td>@item.StartDate.ToString("dd/MM/yyyy")</td>
+                    <td>@item.EndDate?.ToString("dd/MM/yyyy")</td>
+                    <td>@Html.DisplayFor(modelItem => item.Status)</td>
+                    <td><a asp-action="Details" asp-route-id="@item.Id">Detalhes</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

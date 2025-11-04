@@ -1,0 +1,73 @@
+﻿@model ReservationInputModel
+@{
+    ViewData["Title"] = "Editar reserva";
+    var hasBooks = ViewBag.HasBooks as bool? ?? false;
+    var hasReaders = ViewBag.HasReaders as bool? ?? false;
+    var canSubmit = hasBooks && hasReaders;
+}
+
+<h1>Editar reserva</h1>
+
+@if (!hasBooks)
+{
+    <div class="alert alert-warning">Não existem livros disponíveis para seleção. Atualize a lista de livros se necessário.</div>
+}
+
+@if (!hasReaders)
+{
+    <div class="alert alert-warning">Não existem leitores disponíveis para seleção. Verifique os perfis de leitores.</div>
+}
+
+<form asp-action="Edit" method="post" asp-route-id="@Model.Id">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="BookId" class="form-label"></label>
+        <select asp-for="BookId" class="form-select" asp-items="@(ViewBag.Books as IEnumerable<SelectListItem>)">
+            <option value="">-- selecione um livro --</option>
+        </select>
+        <span asp-validation-for="BookId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="ReaderId" class="form-label"></label>
+        <select asp-for="ReaderId" class="form-select" asp-items="@(ViewBag.Readers as IEnumerable<SelectListItem>)">
+            <option value="">-- selecione um leitor --</option>
+        </select>
+        <span asp-validation-for="ReaderId" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="StartDate" class="form-label"></label>
+        <input asp-for="StartDate" class="form-control" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="EndDate" class="form-label"></label>
+        <input asp-for="EndDate" class="form-control" />
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<ReservationStatus>()"></select>
+        <span asp-validation-for="Status" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Notes" class="form-label"></label>
+        <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Notes" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary" @(canSubmit ? "" : "disabled")>Guardar</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

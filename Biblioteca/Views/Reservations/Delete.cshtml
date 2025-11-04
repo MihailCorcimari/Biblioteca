@@ -1,0 +1,29 @@
+﻿@model Biblioteca.Models.Reservation
+@{
+    ViewData["Title"] = "Apagar reserva";
+}
+
+<h1>Apagar reserva</h1>
+
+<h3>Tem a certeza de que pretende apagar esta reserva?</h3>
+<div>
+    <dl class="row">
+        <dt class="col-sm-2">Livro</dt>
+        <dd class="col-sm-10">@Model.Book?.Title</dd>
+
+        <dt class="col-sm-2">Leitor</dt>
+        <dd class="col-sm-10">@Model.Reader?.FullName</dd>
+
+        <dt class="col-sm-2">Estado</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Status)</dd>
+
+        <dt class="col-sm-2">Data de início</dt>
+        <dd class="col-sm-10">@Model.StartDate.ToString("dd/MM/yyyy")</dd>
+    </dl>
+</div>
+
+<form asp-action="Delete" method="post" asp-route-id="@Model.Id">
+    <input type="hidden" asp-for="Id" />
+    <button type="submit" class="btn btn-danger">Apagar</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+</form>

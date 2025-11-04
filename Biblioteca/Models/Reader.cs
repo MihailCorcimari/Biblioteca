@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Biblioteca.Models
@@ -37,6 +38,7 @@ namespace Biblioteca.Models
         [Display(Name = "Data de criação")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        public ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
         public static string GenerateReaderCode()
         {
             var randomPart = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpperInvariant();
