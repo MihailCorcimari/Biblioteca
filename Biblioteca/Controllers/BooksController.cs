@@ -1,4 +1,6 @@
+using System.Linq;
 using Biblioteca.Models;
+using Biblioteca.Models.BookViewModels;
 using Biblioteca.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +23,10 @@ namespace Biblioteca.Controllers
         public async Task<IActionResult> Index()
         {
             var books = await _repository.GetAllAsync();
-            return View(books);
+            var viewModel = books
+                .Select(book => BookAvailabilityViewModel.FromBook(book))
+                .ToList();
+            return View(viewModel);
         }
 
         // GET: Livros/Detalhes/5
@@ -38,7 +43,8 @@ namespace Biblioteca.Controllers
             {
                 return NotFound();
             }
-            return View(book);
+            var viewModel = BookAvailabilityViewModel.FromBook(book);
+            return View(viewModel);
         }
 
         // GET: Livros/Criar

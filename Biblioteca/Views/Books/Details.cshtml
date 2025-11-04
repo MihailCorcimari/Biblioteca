@@ -1,4 +1,4 @@
-@model Biblioteca.Models.Book
+@model Biblioteca.Models.BookViewModels.BookAvailabilityViewModel
 
 <h1>Detalhes</h1>
 
@@ -12,8 +12,29 @@
         <dd class="col-sm-10">@Model.Author</dd>
         <dt class="col-sm-2">Data de Publicação</dt>
         <dd class="col-sm-10">@Model.PublicationDate?.ToShortDateString()</dd>
+        <dt class="col-sm-2">Disponibilidade</dt>
+        <dd class="col-sm-10">@Model.AvailabilitySummary</dd>
     </dl>
 </div>
+@if (!Model.IsAvailable)
+{
+    <div class="alert alert-warning" role="alert">
+        @if (Model.HasOpenEndedReservation)
+        {
+            <span>O livro encontra-se reservado sem data prevista de devolução.</span>
+        }
+        else if (Model.CurrentReservationEndDate.HasValue)
+        {
+            <span>Previsto ficar disponível a partir de @Model.CurrentReservationEndDate.Value.AddDays(1).ToShortDateString().</span>
+        }
+    </div>
+}
+else if (Model.NextReservationStartDate.HasValue)
+{
+    <div class="alert alert-info" role="alert">
+        Disponível até @Model.NextReservationStartDate.Value.AddDays(-1).ToShortDateString(), quando a próxima reserva tem início.
+    </div>
+}
 <div>
     <a asp-action="Edit" asp-route-id="@Model.Id">Editar</a> |
     <a asp-action="Index">Voltar</a>

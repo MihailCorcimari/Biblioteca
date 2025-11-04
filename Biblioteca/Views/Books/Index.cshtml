@@ -1,4 +1,4 @@
-@model IEnumerable<Biblioteca.Models.Book>
+@model IEnumerable<Biblioteca.Models.BookViewModels.BookAvailabilityViewModel>
 
 <h1>Livros</h1>
 
@@ -12,6 +12,7 @@
             <th>Título</th>
             <th>Autor</th>
             <th>Data de Publicação</th>
+            <th>Disponibilidade</th>
             <th></th>
         </tr>
     </thead>
@@ -22,6 +23,7 @@
             <td>@item.Title</td>
             <td>@item.Author</td>
             <td>@item.PublicationDate?.ToShortDateString()</td>
+            <td>@item.AvailabilitySummary</td>
             <td>
                 <a asp-action="Edit" asp-route-id="@item.Id">Editar</a> |
                 <a asp-action="Details" asp-route-id="@item.Id">Detalhes</a> |
