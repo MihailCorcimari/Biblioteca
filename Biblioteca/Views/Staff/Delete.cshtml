@@ -1,0 +1,29 @@
+@model Biblioteca.Models.StaffViewModels.StaffInputModel
+@{
+    ViewData["Title"] = "Remover funcionário";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div class="alert alert-warning">
+    <p>Tem a certeza que pretende remover o funcionário <strong>@Model.FullName</strong> (@Model.Email)?</p>
+</div>
+
+<form asp-action="Delete" method="post">
+    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input class="form-control" value="@Model.Email" disabled />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <input class="form-control" value="@Model.FullName" disabled />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Telemóvel</label>
+        <input class="form-control" value="@Model.PhoneNumber" disabled />
+    </div>
+
+    <button type="submit" class="btn btn-danger">Confirmar remoção</button>
+    <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+</form>

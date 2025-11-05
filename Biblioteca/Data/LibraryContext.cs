@@ -1,7 +1,6 @@
 using Biblioteca.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.PortableExecutable;
 
 namespace Biblioteca.Data
 {
@@ -47,7 +46,7 @@ namespace Biblioteca.Data
                 entity.HasOne(r => r.Reader)
                     .WithMany(re => re.Reservations)
                     .HasForeignKey(r => r.ReaderId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }
