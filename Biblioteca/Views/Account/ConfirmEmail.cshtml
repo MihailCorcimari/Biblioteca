@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "Confirmar email";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        <p>Ocorreu um erro a confirmar o email. Utilize o link mais recente que recebeu ou solicite um novo.</p>
+    </div>
+}
+else
+{
+    <p>O seu email foi confirmado. Pode fechar esta janela.</p>
+}
+
+<p><a asp-action="Login">Ir para o login</a></p>

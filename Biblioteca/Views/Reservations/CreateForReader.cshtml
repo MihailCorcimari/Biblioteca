@@ -1,42 +1,27 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Rendering
 @model ReservationInputModel
 @{
-    ViewData["Title"] = "Criar reserva";
+    ViewData["Title"] = "Nova reserva";
     var hasBooks = ViewBag.HasBooks as bool? ?? false;
-    var hasReaders = ViewBag.HasReaders as bool? ?? false;
-    var canSubmit = hasBooks && hasReaders;
 }
 
-<h1>Criar reserva</h1>
+<h1>@ViewData["Title"]</h1>
 
 @if (!hasBooks)
 {
-    <div class="alert alert-warning">É necessário registar pelo menos um livro antes de criar reservas.</div>
+    <div class="alert alert-warning">Não existem livros disponíveis para reserva neste momento.</div>
 }
 
-@if (!hasReaders)
-{
-    <div class="alert alert-warning">É necessário registar pelo menos um leitor antes de criar reservas.</div>
-}
-
-<form asp-action="Create" method="post">
+<form asp-action="CreateForReader" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <fieldset @(canSubmit ? "" : "disabled")>
+    <fieldset @(hasBooks ? "" : "disabled")>
         <div class="mb-3">
             <label asp-for="BookId" class="form-label"></label>
             <select asp-for="BookId" class="form-select" asp-items="@(ViewBag.Books as IEnumerable<SelectListItem>)">
                 <option value="">-- selecione um livro --</option>
             </select>
             <span asp-validation-for="BookId" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="ReaderId" class="form-label"></label>
-            <select asp-for="ReaderId" class="form-select" asp-items="@(ViewBag.Readers as IEnumerable<SelectListItem>)">
-                <option value="">-- selecione um leitor --</option>
-            </select>
-            <span asp-validation-for="ReaderId" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
@@ -52,20 +37,14 @@
         </div>
 
         <div class="mb-3">
-            <label asp-for="Status" class="form-label"></label>
-            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<ReservationStatus>()"></select>
-            <span asp-validation-for="Status" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
             <label asp-for="Notes" class="form-label"></label>
             <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
             <span asp-validation-for="Notes" class="text-danger"></span>
         </div>
     </fieldset>
 
-    <button type="submit" class="btn btn-primary" @(canSubmit ? "" : "disabled")>Guardar</button>
-    <a asp-action="Index" class="btn btn-secondary ms-2">Cancelar</a>
+    <button type="submit" class="btn btn-primary" @(hasBooks ? "" : "disabled")>Submeter pedido</button>
+    <a asp-action="My" class="btn btn-secondary ms-2">Cancelar</a>
 </form>
 
 @section Scripts {

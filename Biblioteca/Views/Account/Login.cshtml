@@ -4,6 +4,10 @@
 }
 
 <h1 class="mb-4">@ViewData["Title"]</h1>
+@if (ViewData["StatusMessage"] is string statusMessage && !string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-success">@statusMessage</div>
+}
 <div class="row">
     <div class="col-md-6">
         <form asp-action="Login" method="post" asp-route-returnUrl="@ViewData["ReturnUrl"]">

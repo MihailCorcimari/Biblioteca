@@ -42,5 +42,12 @@
     else
     {
         <a asp-action="My" class="btn btn-secondary">Voltar às minhas reservas</a>
+        @if (Model.Status != Biblioteca.Models.ReservationStatus.Cancelled && Model.Status != Biblioteca.Models.ReservationStatus.Completed)
+        {
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger ms-2">Cancelar reserva</button>
+            </form>
+        }
     }
 </div>

@@ -5,5 +5,6 @@
         public const string Administrator = "Administrador";
         public const string Staff = "Funcionário";
         public const string Reader = "Leitor";
+        public const string Anonymous = "Anónimo";
     }
 }

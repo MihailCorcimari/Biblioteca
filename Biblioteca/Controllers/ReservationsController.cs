@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Biblioteca.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Staff + "," + RoleNames.Reader)]
     [Route("Reservas")]
     public class ReservationsController : Controller
     {
@@ -41,6 +41,7 @@ namespace Biblioteca.Controllers
         }
 
         [HttpGet("Minhas")]
+        [Authorize(Roles = RoleNames.Reader)]
         public async Task<IActionResult> My()
         {
             var reader = await GetCurrentReaderAsync();
@@ -94,14 +95,20 @@ namespace Biblioteca.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ReservationInputModel model)
         {
+            await LoadSelectionListsAsync();
+
             if (!ValidateDateRange(model))
             {
                 ModelState.AddModelError(nameof(model.EndDate), "A data de fim deve ser posterior ou igual à data de início.");
             }
 
+            if (ModelState.IsValid && !await ValidateAvailabilityAsync(model))
+            {
+                ModelState.AddModelError(string.Empty, "Já existe uma reserva para este livro nas datas selecionadas.");
+            }
+
             if (!ModelState.IsValid)
             {
-                await LoadSelectionListsAsync();
                 return View(model);
             }
 
@@ -149,15 +156,20 @@ namespace Biblioteca.Controllers
             {
                 return NotFound();
             }
+            await LoadSelectionListsAsync();
 
             if (!ValidateDateRange(model))
             {
                 ModelState.AddModelError(nameof(model.EndDate), "A data de fim deve ser posterior ou igual à data de início.");
             }
 
+            if (ModelState.IsValid && !await ValidateAvailabilityAsync(model, id))
+            {
+                ModelState.AddModelError(string.Empty, "Já existe uma reserva para este livro nas datas selecionadas.");
+            }
+
             if (!ModelState.IsValid)
             {
-                await LoadSelectionListsAsync();
                 return View(model);
             }
 
@@ -205,6 +217,102 @@ namespace Biblioteca.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet("Nova")]
+        [Authorize(Roles = RoleNames.Reader)]
+        public async Task<IActionResult> CreateForReader()
+        {
+            var reader = await GetCurrentReaderAsync();
+            if (reader == null)
+            {
+                return RedirectToAction("Profile", "Readers");
+            }
+
+            await LoadSelectionListsAsync(includeReaders: false);
+
+            var model = new ReservationInputModel
+            {
+                StartDate = DateTime.Today,
+                EndDate = DateTime.Today.AddDays(7)
+            };
+
+            return View("CreateForReader", model);
+        }
+
+        [HttpPost("Nova")]
+        [Authorize(Roles = RoleNames.Reader)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateForReader(ReservationInputModel model)
+        {
+            var reader = await GetCurrentReaderAsync();
+            if (reader == null)
+            {
+                return RedirectToAction("Profile", "Readers");
+            }
+
+            ModelState.Remove(nameof(model.ReaderId));
+            ModelState.Remove(nameof(model.Status));
+            model.ReaderId = reader.Id;
+            model.Status = ReservationStatus.Pending;
+
+            if (!ValidateDateRange(model))
+            {
+                ModelState.AddModelError(nameof(model.EndDate), "A data de fim deve ser posterior ou igual à data de início.");
+            }
+
+            if (ModelState.IsValid && !await ValidateAvailabilityAsync(model))
+            {
+                ModelState.AddModelError(string.Empty, "Já existe uma reserva para este livro nas datas selecionadas.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await LoadSelectionListsAsync(includeReaders: false);
+                return View("CreateForReader", model);
+            }
+
+            var reservation = new Reservation
+            {
+                BookId = model.BookId,
+                ReaderId = reader.Id,
+                StartDate = model.StartDate,
+                EndDate = model.EndDate,
+                Status = ReservationStatus.Pending,
+                Notes = model.Notes,
+                ReservedAt = DateTime.UtcNow
+            };
+
+            await _reservationRepository.AddAsync(reservation);
+            return RedirectToAction(nameof(My));
+        }
+
+        [HttpPost("Cancelar/{id}")]
+        [Authorize(Roles = RoleNames.Reader)]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var reservation = await _reservationRepository.GetByIdWithDetailsAsync(id);
+            if (reservation == null)
+            {
+                return NotFound();
+            }
+
+            var reader = await GetCurrentReaderAsync();
+            if (reader == null || reservation.ReaderId != reader.Id)
+            {
+                return Forbid();
+            }
+
+            if (reservation.Status == ReservationStatus.Cancelled)
+            {
+                return RedirectToAction(nameof(My));
+            }
+
+            reservation.Status = ReservationStatus.Cancelled;
+            await _reservationRepository.UpdateAsync(reservation);
+
+            return RedirectToAction(nameof(My));
+        }
+
         private ReservationInputModel MapToInputModel(Reservation reservation)
         {
             return new ReservationInputModel
@@ -224,21 +332,32 @@ namespace Biblioteca.Controllers
             return !model.EndDate.HasValue || model.EndDate.Value.Date >= model.StartDate.Date;
         }
 
-        private async Task LoadSelectionListsAsync()
+        private async Task LoadSelectionListsAsync(bool includeReaders = true)
         {
             var books = (await _bookRepository.GetAllAsync()).OrderBy(b => b.Title).ToList();
-            var readers = (await _readerRepository.GetAllWithUsersAsync()).OrderBy(r => r.FullName).ToList();
 
             ViewBag.Books = books
                 .Select(b => new SelectListItem(b.Title, b.Id.ToString()))
                 .ToList();
 
-            ViewBag.Readers = readers
-                .Select(r => new SelectListItem(r.FullName + " (" + (r.ApplicationUser?.Email ?? string.Empty) + ")", r.Id.ToString()))
-                .ToList();
-
             ViewBag.HasBooks = books.Any();
-            ViewBag.HasReaders = readers.Any();
+            if (includeReaders)
+            {
+                var readers = (await _readerRepository.GetAllWithUsersAsync()).OrderBy(r => r.FullName).ToList();
+                ViewBag.Readers = readers
+                    .Select(r => new SelectListItem(r.FullName + " (" + (r.ApplicationUser?.Email ?? string.Empty) + ")", r.Id.ToString()))
+                    .ToList();
+                ViewBag.HasReaders = readers.Any();
+            }
+            else
+            {
+                ViewBag.HasReaders = true;
+            }
+        }
+
+        private async Task<bool> ValidateAvailabilityAsync(ReservationInputModel model, int? reservationId = null)
+        {
+            return !await _reservationRepository.HasConflictingReservationAsync(model.BookId, model.StartDate, model.EndDate, reservationId);
         }
 
         private async Task<Reader?> GetCurrentReaderAsync()

@@ -36,6 +36,10 @@ else if (Model.NextReservationStartDate.HasValue)
     </div>
 }
 <div>
-    <a asp-action="Edit" asp-route-id="@Model.Id">Editar</a> |
     <a asp-action="Index">Voltar</a>
+    @if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator) || User.IsInRole(Biblioteca.Models.RoleNames.Staff))
+    {
+        <span> | </span>
+        <a asp-action="Edit" asp-route-id="@Model.Id">Editar</a>
+    }
 </div>

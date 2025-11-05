@@ -1,0 +1,68 @@
+﻿@using System.Linq
+@model IEnumerable<Biblioteca.Models.StaffViewModels.StaffListItemViewModel>
+@{
+    ViewData["Title"] = "Funcionários";
+    var statusMessage = ViewData["StatusMessage"] as string;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (!string.IsNullOrWhiteSpace(statusMessage))
+{
+    <div class="alert alert-info">@statusMessage</div>
+}
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Criar novo funcionário</a>
+</p>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-secondary">Ainda não existem funcionários registados.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Telemóvel</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@(string.IsNullOrEmpty(item.FullName) ? "-" : item.FullName)</td>
+                    <td>@item.Email</td>
+                    <td>@(string.IsNullOrEmpty(item.PhoneNumber) ? "-" : item.PhoneNumber)</td>
+                    <td>
+                        @if (item.MustChangePassword)
+                        {
+                            <span class="badge bg-warning text-dark">Aguarda definição de password</span>
+                        }
+                        else if (!item.EmailConfirmed)
+                        {
+                            <span class="badge bg-secondary">Email por confirmar</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Ativo</span>
+                        }
+                    </td>
+                    <td class="text-end">
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <form asp-action="ResendInvitation" asp-route-id="@item.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Reenviar convite</button>
+                        </form>
+                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Remover</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
