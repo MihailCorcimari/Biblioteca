@@ -2,9 +2,12 @@
 
 <h1>Livros</h1>
 
-<p>
-    <a asp-action="Create">Criar novo</a>
-</p>
+@if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator) || User.IsInRole(Biblioteca.Models.RoleNames.Staff))
+{
+    <p>
+        <a asp-action="Create" class="btn btn-primary">Criar novo</a>
+    </p>
+}
 
 <table class="table">
     <thead>
@@ -25,9 +28,17 @@
             <td>@item.PublicationDate?.ToShortDateString()</td>
             <td>@item.AvailabilitySummary</td>
             <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Editar</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Detalhes</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Apagar</a>
+                <a asp-action="Details" asp-route-id="@item.Id">Detalhes</a>
+                @if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator) || User.IsInRole(Biblioteca.Models.RoleNames.Staff))
+                {
+                    <span> | </span>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Editar</a>
+                }
+                @if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator))
+                {
+                    <span> | </span>
+                    <a asp-action="Delete" asp-route-id="@item.Id">Apagar</a>
+                }
             </td>
         </tr>
 }

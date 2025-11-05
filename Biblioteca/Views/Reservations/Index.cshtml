@@ -1,4 +1,5 @@
-﻿@model IEnumerable<Biblioteca.Models.Reservation>
+@using System.Linq
+@model IEnumerable<Biblioteca.Models.Reservation>
 @{
     ViewData["Title"] = "Reservas";
 }
@@ -9,41 +10,48 @@
     <a asp-action="Create" class="btn btn-primary">Criar nova reserva</a>
 </p>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Livro</th>
-            <th>Leitor</th>
-            <th>Data de reserva</th>
-            <th>Data de início</th>
-            <th>Data de fim</th>
-            <th>Estado</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Ainda não existem reservas registadas.</div>
+}
+else
+{
+    <table class="table">
+        <thead>
             <tr>
-                <td>@item.Book?.Title</td>
-                <td>
-                    @item.Reader?.FullName<br />
-                    <small class="text-muted">@item.Reader?.ApplicationUser?.Email</small>
-                </td>
-                <td>@item.ReservedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
-                <td>@item.StartDate.ToString("dd/MM/yyyy")</td>
-                <td>@item.EndDate?.ToString("dd/MM/yyyy")</td>
-                <td>@Html.DisplayFor(modelItem => item.Status)</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id">Detalhes</a> |
-                    <a asp-action="Edit" asp-route-id="@item.Id">Editar</a>
-                    @if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator))
-                    {
-                        <span> | </span>
-                        <a asp-action="Delete" asp-route-id="@item.Id">Apagar</a>
-                    }
-                </td>
+                <th>Livro</th>
+                <th>Leitor</th>
+                <th>Data de reserva</th>
+                <th>Data de início</th>
+                <th>Data de fim</th>
+                <th>Estado</th>
+                <th></th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Book?.Title</td>
+                    <td>
+                        @item.Reader?.FullName<br />
+                        <small class="text-muted">@item.Reader?.ApplicationUser?.Email</small>
+                    </td>
+                    <td>@item.ReservedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@item.StartDate.ToString("dd/MM/yyyy")</td>
+                    <td>@item.EndDate?.ToString("dd/MM/yyyy")</td>
+                    <td>@Html.DisplayFor(modelItem => item.Status)</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id">Detalhes</a> |
+                        <a asp-action="Edit" asp-route-id="@item.Id">Editar</a>
+                        @if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator))
+                        {
+                            <span> | </span>
+                            <a asp-action="Delete" asp-route-id="@item.Id">Apagar</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

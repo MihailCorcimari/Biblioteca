@@ -34,11 +34,20 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Reservations" asp-action="Index">Reservas</a>
                             </li>
+                            @if (User.IsInRole(RoleNames.Administrator))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Staff" asp-action="Index">Funcionários</a>
+                                </li>
+                            }
                         }
                         @if (User.Identity?.IsAuthenticated == true && User.IsInRole(RoleNames.Reader))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Reservations" asp-action="My">Minhas reservas</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Reservations" asp-action="CreateForReader">Reservar livros</a>
                             </li>
                         }
                         <li class="nav-item">

@@ -1,6 +1,7 @@
 using Biblioteca.Data;
 using Biblioteca.Models;
 using Biblioteca.Repositories;
+using Biblioteca.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ builder.Services.AddDbContext<LibraryContext>(options =>
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedAccount = true;
 })
     .AddEntityFrameworkStores<LibraryContext>()
     .AddDefaultTokenProviders();
@@ -29,6 +30,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<IBookRepository, BookRepository>();
 builder.Services.AddScoped<IReaderRepository, ReaderRepository>();
 builder.Services.AddScoped<IReservationRepository, ReservationRepository>();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 
 var app = builder.Build();
 

@@ -1,10 +1,13 @@
-﻿using Biblioteca.Models;
+using Biblioteca.Models;
 using Biblioteca.Models.AccountViewModels;
 using Biblioteca.Repositories;
+using Biblioteca.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection.PortableExecutable;
+using Microsoft.Extensions.Logging;
+using System.Text.Encodings.Web;
+using System.Threading.Tasks;
 
 namespace Biblioteca.Controllers
 {
@@ -15,17 +18,23 @@ namespace Biblioteca.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IReaderRepository _readerRepository;
+        private readonly IEmailSender _emailSender;
+        private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<IdentityRole> roleManager,
-            IReaderRepository readerRepository)
+            IReaderRepository readerRepository,
+            IEmailSender emailSender,
+            ILogger<AccountController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _readerRepository = readerRepository;
+            _emailSender = emailSender;
+            _logger = logger;
         }
 
         [HttpGet("Login")]
@@ -33,6 +42,7 @@ namespace Biblioteca.Controllers
         public IActionResult Login(string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
+            ViewData["StatusMessage"] = TempData["StatusMessage"];
             return View(new LoginViewModel());
         }
 
@@ -45,6 +55,22 @@ namespace Biblioteca.Controllers
             if (!ModelState.IsValid)
             {
                 return View(model);
+            }
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user != null)
+            {
+                if (!await _userManager.IsEmailConfirmedAsync(user))
+                {
+                    ModelState.AddModelError(string.Empty, "É necessário confirmar o email antes de iniciar sessão.");
+                    return View(model);
+                }
+
+                if (user.MustChangePassword)
+                {
+                    ModelState.AddModelError(string.Empty, "Defina uma nova palavra-passe através do link enviado para o seu email.");
+                    return View(model);
+                }
             }
 
             var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
@@ -88,8 +114,9 @@ namespace Biblioteca.Controllers
             {
                 UserName = model.Email,
                 Email = model.Email,
+                FullName = model.FullName,
                 PhoneNumber = model.PhoneNumber,
-                EmailConfirmed = true
+                EmailConfirmed = false
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -98,8 +125,8 @@ namespace Biblioteca.Controllers
                 await EnsureRoleExistsAsync(RoleNames.Reader);
                 await _userManager.AddToRoleAsync(user, RoleNames.Reader);
                 await CreateReaderProfileAsync(user, model);
-                await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToLocal(returnUrl);
+                await SendEmailConfirmationAsync(user);
+                return RedirectToAction(nameof(RegisterConfirmation));
             }
 
             foreach (var error in result.Errors)
@@ -108,6 +135,43 @@ namespace Biblioteca.Controllers
             }
 
             return View(model);
+        }
+
+        [HttpGet("RegistarConfirmacao")]
+        [AllowAnonymous]
+        public IActionResult RegisterConfirmation()
+        {
+            return View();
+        }
+
+        [HttpGet("ConfirmarEmail")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ConfirmEmail(string userId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View();
+            }
+
+            TempData["StatusMessage"] = "Email confirmado com sucesso. Já pode iniciar sessão.";
+            return RedirectToAction(nameof(Login));
         }
 
         [HttpGet("RecuperarPassword")]
@@ -128,16 +192,20 @@ namespace Biblioteca.Controllers
             }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user != null)
+            if (user != null && await _userManager.IsEmailConfirmedAsync(user))
             {
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { token, email = model.Email }, Request.Scheme);
                 if (callbackUrl != null)
                 {
-                    TempData["ResetLink"] = callbackUrl;
+                    await _emailSender.SendEmailAsync(
+                        model.Email,
+                        "Recuperação de palavra-passe",
+                        $"Por favor, altere a sua palavra-passe <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicando aqui</a>.");
                 }
             }
 
+            TempData["Email"] = model.Email;
             return RedirectToAction(nameof(ForgotPasswordConfirmation));
         }
 
@@ -145,7 +213,7 @@ namespace Biblioteca.Controllers
         [AllowAnonymous]
         public IActionResult ForgotPasswordConfirmation()
         {
-            ViewData["ResetLink"] = TempData["ResetLink"];
+            ViewData["Email"] = TempData["Email"];
             return View();
         }
 
@@ -186,6 +254,12 @@ namespace Biblioteca.Controllers
             var result = await _userManager.ResetPasswordAsync(user, model.Token, model.Password);
             if (result.Succeeded)
             {
+                if (user.MustChangePassword)
+                {
+                    user.MustChangePassword = false;
+                    await _userManager.UpdateAsync(user);
+                }
+
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
             }
 
@@ -233,6 +307,12 @@ namespace Biblioteca.Controllers
             {
                 await _signInManager.RefreshSignInAsync(user);
                 TempData["StatusMessage"] = "Password alterada com sucesso.";
+                if (user.MustChangePassword)
+                {
+                    user.MustChangePassword = false;
+                    await _userManager.UpdateAsync(user);
+                }
+
                 return RedirectToAction(nameof(ChangePassword));
             }
 
@@ -279,6 +359,23 @@ namespace Biblioteca.Controllers
             };
 
             await _readerRepository.AddAsync(reader);
+        }
+
+        private async Task SendEmailConfirmationAsync(ApplicationUser user)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            var callbackUrl = Url.Action(nameof(ConfirmEmail), "Account", new { userId = user.Id, token }, Request.Scheme);
+
+            if (callbackUrl == null)
+            {
+                _logger.LogWarning("Não foi possível gerar o link de confirmação de email para o utilizador {UserId}.", user.Id);
+                return;
+            }
+
+            await _emailSender.SendEmailAsync(
+                user.Email!,
+                "Confirmação de email",
+                $"Obrigado por se registar na Biblioteca. Confirme o seu email <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicando aqui</a>.");
         }
     }
 }

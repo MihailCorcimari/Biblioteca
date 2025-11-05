@@ -15,7 +15,8 @@ namespace Biblioteca.Data
             {
                 RoleNames.Administrator,
                 RoleNames.Staff,
-                RoleNames.Reader
+                RoleNames.Reader,
+                RoleNames.Anonymous
             };
 
             foreach (var role in roles)
@@ -36,6 +37,7 @@ namespace Biblioteca.Data
                 {
                     UserName = adminEmail,
                     Email = adminEmail,
+                    FullName = "Administrador do Sistema",
                     EmailConfirmed = true
                 };
 
