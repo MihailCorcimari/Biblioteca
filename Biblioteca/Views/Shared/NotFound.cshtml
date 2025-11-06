@@ -18,10 +18,3 @@
 {
     <p class="text-muted">Identificador do pedido: <code>@Model.RequestId</code></p>
 }
-
-@if (!string.IsNullOrWhiteSpace(Model.Details))
-{
-    <div class="alert alert-secondary mt-4" role="alert">
-        @Model.Details
-    </div>
-}

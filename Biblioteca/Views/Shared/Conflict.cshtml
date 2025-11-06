@@ -1,0 +1,23 @@
+﻿@model ErrorViewModel
+@{
+    Layout = "_ErrorLayout";
+    ViewData["Title"] = Model.Title;
+    var returnUrl = ViewData["ReturnUrl"] as string;
+}
+
+<div class="mb-4">
+    <h1 class="display-5 fw-bold text-warning mb-3">@Model.Title</h1>
+    <p class="lead mb-0">@Model.Message</p>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Details))
+{
+    <div class="alert alert-secondary" role="alert">
+        @Model.Details
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(returnUrl))
+{
+    <a class="btn btn-outline-primary" href="@returnUrl">Voltar à página anterior</a>
+}

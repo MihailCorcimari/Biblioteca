@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 
 namespace Biblioteca.Controllers
 {
@@ -123,8 +124,17 @@ namespace Biblioteca.Controllers
                 ReservedAt = DateTime.UtcNow
             };
 
-            await _reservationRepository.AddAsync(reservation);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _reservationRepository.AddAsync(reservation);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível criar a reserva porque existem conflitos com outros registos.";
+                var returnUrl = Url.Action(nameof(Create));
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
         }
 
         [HttpGet("Editar/{id}")]
@@ -186,8 +196,17 @@ namespace Biblioteca.Controllers
             reservation.Status = model.Status;
             reservation.Notes = model.Notes;
 
-            await _reservationRepository.UpdateAsync(reservation);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _reservationRepository.UpdateAsync(reservation);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível atualizar a reserva porque existem conflitos com outros registos.";
+                var returnUrl = Url.Action(nameof(Edit), new { id });
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
         }
 
         [HttpGet("Apagar/{id}")]
@@ -213,8 +232,17 @@ namespace Biblioteca.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _reservationRepository.DeleteAsync(id);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _reservationRepository.DeleteAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível eliminar a reserva porque existem dados relacionados.";
+                var returnUrl = Url.Action(nameof(Delete), new { id });
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
         }
 
         [HttpGet("Nova")]
@@ -281,8 +309,17 @@ namespace Biblioteca.Controllers
                 ReservedAt = DateTime.UtcNow
             };
 
-            await _reservationRepository.AddAsync(reservation);
-            return RedirectToAction(nameof(My));
+            try
+            {
+                await _reservationRepository.AddAsync(reservation);
+                return RedirectToAction(nameof(My));
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível criar a reserva porque existem conflitos com outros registos.";
+                var returnUrl = Url.Action(nameof(CreateForReader));
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
         }
 
         [HttpPost("Cancelar/{id}")]
@@ -308,9 +345,17 @@ namespace Biblioteca.Controllers
             }
 
             reservation.Status = ReservationStatus.Cancelled;
-            await _reservationRepository.UpdateAsync(reservation);
-
-            return RedirectToAction(nameof(My));
+            try
+            {
+                await _reservationRepository.UpdateAsync(reservation);
+                return RedirectToAction(nameof(My));
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível cancelar a reserva devido a um conflito de dados.";
+                var returnUrl = Url.Action(nameof(My));
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
         }
 
         private ReservationInputModel MapToInputModel(Reservation reservation)

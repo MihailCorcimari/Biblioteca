@@ -4,6 +4,7 @@ using Biblioteca.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection.PortableExecutable;
 using System.Threading.Tasks;
 
@@ -96,7 +97,16 @@ namespace Biblioteca.Controllers
             }
 
             UpdateReaderFromModel(reader, model);
-            await _readerRepository.UpdateAsync(reader);
+            try
+            {
+                await _readerRepository.UpdateAsync(reader);
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível atualizar o leitor porque existem dados em conflito.";
+                var returnUrl = Url.Action(nameof(Edit), new { id });
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
 
             TempData["StatusMessage"] = "Dados do leitor atualizados com sucesso.";
             return RedirectToAction(nameof(Edit), new { id });
@@ -133,7 +143,16 @@ namespace Biblioteca.Controllers
             }
 
             UpdateReaderFromModel(reader, model);
-            await _readerRepository.UpdateAsync(reader);
+            try
+            {
+                await _readerRepository.UpdateAsync(reader);
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível atualizar o perfil porque os dados entram em conflito com outro registo.";
+                var returnUrl = Url.Action(nameof(Profile));
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
 
             TempData["StatusMessage"] = "O seu perfil foi atualizado.";
             return RedirectToAction(nameof(Profile));
@@ -162,8 +181,17 @@ namespace Biblioteca.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _readerRepository.DeleteAsync(id);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _readerRepository.DeleteAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível eliminar o leitor porque existem dados associados.";
+                var returnUrl = Url.Action(nameof(Delete), new { id });
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
         }
 
         private async Task<bool> CanAccessReaderAsync(Reader reader)

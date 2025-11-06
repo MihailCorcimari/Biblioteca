@@ -4,6 +4,7 @@ using Biblioteca.Models.BookViewModels;
 using Biblioteca.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Biblioteca.Controllers
 {
@@ -63,8 +64,17 @@ namespace Biblioteca.Controllers
         {
             if (ModelState.IsValid)
             {
-                await _repository.AddAsync(book);
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    await _repository.AddAsync(book);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException)
+                {
+                    var message = "Não foi possível criar o livro porque já existe um registo com dados incompatíveis.";
+                    var returnUrl = Url.Action(nameof(Create));
+                    return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+                }
             }
             return View(book);
         }
@@ -99,8 +109,17 @@ namespace Biblioteca.Controllers
 
             if (ModelState.IsValid)
             {
-                await _repository.UpdateAsync(book);
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    await _repository.UpdateAsync(book);
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateException)
+                {
+                    var message = "Não foi possível atualizar o livro porque existem conflitos com outros registos.";
+                    var returnUrl = Url.Action(nameof(Edit), new { id = book.Id });
+                    return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+                }
             }
             return View(book);
         }
@@ -128,8 +147,17 @@ namespace Biblioteca.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _repository.DeleteAsync(id);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _repository.DeleteAsync(id);
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateException)
+            {
+                var message = "Não foi possível eliminar o livro porque existem dados relacionados.";
+                var returnUrl = Url.Action(nameof(Delete), new { id });
+                return RedirectToAction("Conflict", "Erro", new { message, returnUrl });
+            }
         }
     }
 }

@@ -26,7 +26,13 @@ namespace Biblioteca.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var model = ErrorViewModel.ForError(
+                "Ocorreu um erro inesperado",
+                "Lamentamos, mas não conseguimos concluir o seu pedido. Tente novamente mais tarde.",
+                statusCode: 500,
+                requestId: Activity.Current?.Id ?? HttpContext.TraceIdentifier);
+
+            return View("~/Views/Shared/Error.cshtml", model);
         }
     }
 }

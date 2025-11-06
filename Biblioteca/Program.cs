@@ -41,6 +41,9 @@ using (var scope = app.Services.CreateScope())
     await SeedData.InitializeAsync(scope.ServiceProvider);
 }
 
+app.UseExceptionHandler("/Erro");
+app.UseStatusCodePagesWithReExecute("/Erro/Status/{0}");
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
