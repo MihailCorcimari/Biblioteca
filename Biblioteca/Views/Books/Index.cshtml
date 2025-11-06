@@ -34,7 +34,7 @@
                         <span> | </span>
                         <a asp-action="Edit" asp-route-id="@item.Id">Editar</a>
                     }
-                    @if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator))
+                    @if (User.IsInRole(Biblioteca.Models.RoleNames.Administrator) || User.IsInRole(Biblioteca.Models.RoleNames.Staff))
                     {
                         <span> | </span>
                         <a asp-action="Delete" asp-route-id="@item.Id">Apagar</a>

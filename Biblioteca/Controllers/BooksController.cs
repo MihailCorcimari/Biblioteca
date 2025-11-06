@@ -106,7 +106,7 @@ namespace Biblioteca.Controllers
         }
 
         // GET: Livros/Apagar/5
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Staff)]
         [HttpGet("Apagar/{id}")]
         public async Task<IActionResult> Delete(int? id)
         {
@@ -123,7 +123,7 @@ namespace Biblioteca.Controllers
         }
 
         // POST: Livros/Apagar/5
-        [Authorize(Roles = RoleNames.Administrator)]
+        [Authorize(Roles = RoleNames.Administrator + "," + RoleNames.Staff)]
         [HttpPost("Apagar/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
