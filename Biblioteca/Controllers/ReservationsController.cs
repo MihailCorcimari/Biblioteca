@@ -1,14 +1,20 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Biblioteca.Models;
+﻿using Biblioteca.Models;
 using Biblioteca.Models.ReservationViewModels;
 using Biblioteca.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
+using System;
+using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Threading.Tasks;
 
 namespace Biblioteca.Controllers
 {
@@ -20,17 +26,23 @@ namespace Biblioteca.Controllers
         private readonly IBookRepository _bookRepository;
         private readonly IReaderRepository _readerRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IEmailSender _emailSender;
+        private readonly ILogger<ReservationsController> _logger;
 
         public ReservationsController(
             IReservationRepository reservationRepository,
             IBookRepository bookRepository,
             IReaderRepository readerRepository,
-            UserManager<ApplicationUser> userManager)
+            UserManager<ApplicationUser> userManager,
+            IEmailSender emailSender,
+            ILogger<ReservationsController> logger)
         {
             _reservationRepository = reservationRepository;
             _bookRepository = bookRepository;
             _readerRepository = readerRepository;
             _userManager = userManager;
+            _emailSender = emailSender;
+            _logger = logger;
         }
 
         [HttpGet("")]
@@ -127,6 +139,11 @@ namespace Biblioteca.Controllers
             try
             {
                 await _reservationRepository.AddAsync(reservation);
+                var reservationDetails = await _reservationRepository.GetByIdWithDetailsAsync(reservation.Id);
+                if (reservationDetails != null)
+                {
+                    await NotifyStaffAboutReservationAsync(reservationDetails, "criada");
+                }
                 return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateException)
@@ -312,6 +329,11 @@ namespace Biblioteca.Controllers
             try
             {
                 await _reservationRepository.AddAsync(reservation);
+                var reservationDetails = await _reservationRepository.GetByIdWithDetailsAsync(reservation.Id);
+                if (reservationDetails != null)
+                {
+                    await NotifyStaffAboutReservationAsync(reservationDetails, "criada");
+                }
                 return RedirectToAction(nameof(My));
             }
             catch (DbUpdateException)
@@ -348,6 +370,7 @@ namespace Biblioteca.Controllers
             try
             {
                 await _reservationRepository.UpdateAsync(reservation);
+                await NotifyStaffAboutReservationAsync(reservation, "cancelada");
                 return RedirectToAction(nameof(My));
             }
             catch (DbUpdateException)
@@ -425,6 +448,79 @@ namespace Biblioteca.Controllers
 
             var reader = await GetCurrentReaderAsync();
             return reader != null && reservation.ReaderId == reader.Id;
+        }
+        private async Task NotifyStaffAboutReservationAsync(Reservation reservation, string action)
+        {
+            var staffMembers = await _userManager.GetUsersInRoleAsync(RoleNames.Staff);
+            var staffEmails = staffMembers
+                .Where(user => !string.IsNullOrWhiteSpace(user.Email))
+                .Select(user => user.Email!)
+                .Distinct()
+                .ToList();
+
+            if (!staffEmails.Any())
+            {
+                return;
+            }
+
+            if (reservation.Book == null)
+            {
+                reservation.Book = await _bookRepository.GetByIdAsync(reservation.BookId);
+            }
+
+            if (reservation.Reader == null || reservation.Reader.ApplicationUser == null)
+            {
+                var reservationWithDetails = await _reservationRepository.GetByIdWithDetailsAsync(reservation.Id);
+                if (reservationWithDetails != null)
+                {
+                    reservation = reservationWithDetails;
+                }
+            }
+
+            var bookTitle = reservation.Book?.Title ?? $"Livro #{reservation.BookId}";
+            var readerName = reservation.Reader?.FullName ?? "Leitor desconhecido";
+            var readerEmail = reservation.Reader?.ApplicationUser?.Email;
+            var culture = CultureInfo.GetCultureInfo("pt-PT");
+            var startDate = reservation.StartDate.ToString("dd/MM/yyyy", culture);
+            var endDate = (reservation.EndDate ?? reservation.StartDate).ToString("dd/MM/yyyy", culture);
+            var reservationUrl = Url.Action(nameof(Details), "Reservations", new { id = reservation.Id }, Request.Scheme);
+
+            var encoder = HtmlEncoder.Default;
+            var builder = new StringBuilder();
+            builder.Append("<p>Uma reserva foi ").Append(encoder.Encode(action)).Append(" por um leitor.</p>");
+            builder.Append("<ul>");
+            builder.Append("<li><strong>Livro:</strong> ").Append(encoder.Encode(bookTitle)).Append("</li>");
+            builder.Append("<li><strong>Leitor:</strong> ").Append(encoder.Encode(readerName));
+            if (!string.IsNullOrWhiteSpace(readerEmail))
+            {
+                builder.Append(" (" + encoder.Encode(readerEmail!) + ")");
+            }
+            builder.Append("</li>");
+            builder.Append("<li><strong>Período:</strong> ").Append(encoder.Encode($"{startDate} - {endDate}")).Append("</li>");
+            builder.Append("<li><strong>Estado atual:</strong> ").Append(encoder.Encode(reservation.Status.ToString())).Append("</li>");
+            if (!string.IsNullOrWhiteSpace(reservation.Notes))
+            {
+                builder.Append("<li><strong>Notas do leitor:</strong> ").Append(encoder.Encode(reservation.Notes!)).Append("</li>");
+            }
+            if (!string.IsNullOrWhiteSpace(reservationUrl))
+            {
+                builder.Append("<li><a href=\"").Append(encoder.Encode(reservationUrl!)).Append("\">Ver detalhes da reserva</a></li>");
+            }
+            builder.Append("</ul>");
+
+            var subject = $"Reserva {action}: {bookTitle}";
+
+            foreach (var email in staffEmails)
+            {
+                try
+                {
+                    await _emailSender.SendEmailAsync(email, subject, builder.ToString());
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Falha ao enviar notificação de reserva {Action} para {Email}.", action, email);
+                }
+            }
         }
     }
 }
