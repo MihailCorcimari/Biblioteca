@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.PortableExecutable;
+using System;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Biblioteca.Controllers
@@ -16,6 +18,15 @@ namespace Biblioteca.Controllers
     {
         private readonly IReaderRepository _readerRepository;
         private readonly UserManager<ApplicationUser> _userManager;
+        private static readonly string[] _allowedImageContentTypes = new[]
+        {
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp"
+        };
+
+        private const long MaxProfileImageSizeBytes = 2 * 1024 * 1024; // 2 MB
 
         public ReadersController(IReaderRepository readerRepository, UserManager<ApplicationUser> userManager)
         {
@@ -84,17 +95,23 @@ namespace Biblioteca.Controllers
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
-            {
-                ViewData["StatusMessage"] = TempData["StatusMessage"];
-                return View(model);
-            }
-
             var reader = await _readerRepository.GetByIdAsync(id);
             if (reader == null)
             {
                 return NotFound();
             }
+
+            ValidateProfileImage(model);
+
+            if (!ModelState.IsValid)
+            {
+                ViewData["StatusMessage"] = TempData["StatusMessage"];
+                model.ProfileImageDataUrl = BuildProfileImageDataUrl(reader);
+                model.Email = reader.ApplicationUser?.Email ?? string.Empty;
+                model.ReaderCode = reader.ReaderCode;
+                return View(model);
+            }
+
 
             UpdateReaderFromModel(reader, model);
             try
@@ -136,9 +153,14 @@ namespace Biblioteca.Controllers
                 return NotFound();
             }
 
+            ValidateProfileImage(model);
+
             if (!ModelState.IsValid)
             {
                 ViewData["StatusMessage"] = TempData["StatusMessage"];
+                model.ProfileImageDataUrl = BuildProfileImageDataUrl(reader);
+                model.Email = reader.ApplicationUser?.Email ?? string.Empty;
+                model.ReaderCode = reader.ReaderCode;
                 return View(model);
             }
 
@@ -214,7 +236,7 @@ namespace Biblioteca.Controllers
                 PhoneNumber = reader.PhoneNumber,
                 Email = reader.ApplicationUser?.Email ?? string.Empty,
                 BirthDate = reader.BirthDate,
-                ProfileImageUrl = reader.ProfileImageUrl,
+                ProfileImageDataUrl = BuildProfileImageDataUrl(reader),
                 ReaderCode = reader.ReaderCode
             };
         }
@@ -224,7 +246,57 @@ namespace Biblioteca.Controllers
             reader.FullName = model.FullName;
             reader.PhoneNumber = model.PhoneNumber;
             reader.BirthDate = model.BirthDate;
-            reader.ProfileImageUrl = model.ProfileImageUrl;
+            if (model.RemoveProfileImage)
+            {
+                reader.ProfileImage = null;
+                reader.ProfileImageContentType = null;
+            }
+            else if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
+            {
+                using var memoryStream = new MemoryStream();
+                model.ProfileImageFile.CopyTo(memoryStream);
+                reader.ProfileImage = memoryStream.ToArray();
+                reader.ProfileImageContentType = model.ProfileImageFile.ContentType;
+            }
+        }
+
+        private void ValidateProfileImage(ReaderInputModel model)
+        {
+            if (model.RemoveProfileImage)
+            {
+                return;
+            }
+
+            if (model.ProfileImageFile == null || model.ProfileImageFile.Length == 0)
+            {
+                return;
+            }
+
+            if (!_allowedImageContentTypes.Contains(model.ProfileImageFile.ContentType))
+            {
+                ModelState.AddModelError(nameof(model.ProfileImageFile), "A imagem tem de estar em formato JPEG, PNG, GIF ou WebP.");
+            }
+
+            if (model.ProfileImageFile.Length > MaxProfileImageSizeBytes)
+            {
+                var maxMegabytes = MaxProfileImageSizeBytes / 1024d / 1024d;
+                ModelState.AddModelError(nameof(model.ProfileImageFile), $"A imagem não pode exceder {maxMegabytes:0.#} MB.");
+            }
+        }
+
+        private static string? BuildProfileImageDataUrl(Reader reader)
+        {
+            if (reader.ProfileImage == null || reader.ProfileImage.Length == 0)
+            {
+                return null;
+            }
+
+            var contentType = string.IsNullOrWhiteSpace(reader.ProfileImageContentType)
+                ? "image/png"
+                : reader.ProfileImageContentType;
+
+            var base64 = Convert.ToBase64String(reader.ProfileImage);
+            return $"data:{contentType};base64,{base64}";
         }
 
         private async Task<Reader?> GetCurrentReaderAsync()

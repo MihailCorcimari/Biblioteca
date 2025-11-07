@@ -31,9 +31,11 @@ namespace Biblioteca.Models
         [DataType(DataType.Date)]
         public DateTime? BirthDate { get; set; }
 
-        [Display(Name = "Foto de perfil (URL)")]
-        [StringLength(512)]
-        public string? ProfileImageUrl { get; set; }
+        [Display(Name = "Foto de perfil")]
+        public byte[]? ProfileImage { get; set; }
+
+        [StringLength(128)]
+        public string? ProfileImageContentType { get; set; }
 
         [Display(Name = "Data de criação")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
