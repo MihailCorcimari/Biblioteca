@@ -11,7 +11,7 @@
     <div class="alert alert-success">@statusMessage</div>
 }
 
-<form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+<form asp-action="Edit" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <input type="hidden" asp-for="Id" />
 
@@ -43,11 +43,28 @@
         <span asp-validation-for="BirthDate" class="text-danger"></span>
     </div>
 
+    @if (!string.IsNullOrEmpty(Model.ProfileImageDataUrl))
+    {
+        <div class="mb-3">
+            <label class="form-label d-block">Foto de perfil atual</label>
+            <img src="@Model.ProfileImageDataUrl" alt="Foto de perfil" class="img-thumbnail" style="max-width: 150px;" />
+        </div>
+    }
+
     <div class="mb-3">
-        <label asp-for="ProfileImageUrl" class="form-label"></label>
-        <input asp-for="ProfileImageUrl" class="form-control" />
-        <span asp-validation-for="ProfileImageUrl" class="text-danger"></span>
+        <label asp-for="ProfileImageFile" class="form-label"></label>
+        <input asp-for="ProfileImageFile" class="form-control" type="file" accept="image/*" />
+        <span class="form-text">Formatos permitidos: JPEG, PNG, GIF ou WebP (máx. 2 MB).</span>
+        <span asp-validation-for="ProfileImageFile" class="text-danger"></span>
     </div>
+
+    @if (!string.IsNullOrEmpty(Model.ProfileImageDataUrl))
+    {
+        <div class="form-check mb-3">
+            <input asp-for="RemoveProfileImage" class="form-check-input" />
+            <label asp-for="RemoveProfileImage" class="form-check-label"></label>
+        </div>
+    }
 
     <button type="submit" class="btn btn-primary">Guardar alterações</button>
     <a class="btn btn-secondary ms-2" asp-action="Index">Cancelar</a>
