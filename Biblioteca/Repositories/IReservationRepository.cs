@@ -11,6 +11,6 @@ namespace Biblioteca.Repositories
         Task<IEnumerable<Reservation>> GetAllWithDetailsAsync();
         Task<IEnumerable<Reservation>> GetByReaderIdAsync(int readerId);
         Task<Reservation?> GetByIdWithDetailsAsync(int id);
-        Task<bool> HasConflictingReservationAsync(int bookId, DateTime startDate, DateTime? endDate, int? excludeReservationId = null);
+        Task<bool> HasConflictingReservationAsync(int bookId, DateTime startDate, DateTime endDate, int? excludeReservationId = null);
     }
 }

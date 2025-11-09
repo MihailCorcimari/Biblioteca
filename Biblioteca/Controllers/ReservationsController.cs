@@ -110,7 +110,7 @@ namespace Biblioteca.Controllers
         {
             await LoadSelectionListsAsync();
 
-            if (!ValidateDateRange(model))
+            if (ModelState.IsValid && !ValidateDateRange(model))
             {
                 ModelState.AddModelError(nameof(model.EndDate), "A data de fim deve ser posterior ou igual à data de início.");
             }
@@ -185,7 +185,7 @@ namespace Biblioteca.Controllers
             }
             await LoadSelectionListsAsync();
 
-            if (!ValidateDateRange(model))
+            if (ModelState.IsValid && !ValidateDateRange(model))
             {
                 ModelState.AddModelError(nameof(model.EndDate), "A data de fim deve ser posterior ou igual à data de início.");
             }
@@ -299,7 +299,7 @@ namespace Biblioteca.Controllers
             model.ReaderId = reader.Id;
             model.Status = ReservationStatus.Pending;
 
-            if (!ValidateDateRange(model))
+            if (ModelState.IsValid && !ValidateDateRange(model))
             {
                 ModelState.AddModelError(nameof(model.EndDate), "A data de fim deve ser posterior ou igual à data de início.");
             }
@@ -397,7 +397,7 @@ namespace Biblioteca.Controllers
 
         private bool ValidateDateRange(ReservationInputModel model)
         {
-            return !model.EndDate.HasValue || model.EndDate.Value.Date >= model.StartDate.Date;
+            return model.EndDate.Date >= model.StartDate.Date;
         }
 
         private async Task LoadSelectionListsAsync(bool includeReaders = true)
@@ -425,7 +425,11 @@ namespace Biblioteca.Controllers
 
         private async Task<bool> ValidateAvailabilityAsync(ReservationInputModel model, int? reservationId = null)
         {
-            return !await _reservationRepository.HasConflictingReservationAsync(model.BookId, model.StartDate, model.EndDate, reservationId);
+            return !await _reservationRepository.HasConflictingReservationAsync(
+                 model.BookId,
+                 model.StartDate,
+                 model.EndDate,
+                 reservationId);
         }
 
         private async Task<Reader?> GetCurrentReaderAsync()
@@ -482,7 +486,7 @@ namespace Biblioteca.Controllers
             var readerEmail = reservation.Reader?.ApplicationUser?.Email;
             var culture = CultureInfo.GetCultureInfo("pt-PT");
             var startDate = reservation.StartDate.ToString("dd/MM/yyyy", culture);
-            var endDate = (reservation.EndDate ?? reservation.StartDate).ToString("dd/MM/yyyy", culture);
+            var endDate = reservation.EndDate.ToString("dd/MM/yyyy", culture);
             var reservationUrl = Url.Action(nameof(Details), "Reservations", new { id = reservation.Id }, Request.Scheme);
 
             var encoder = HtmlEncoder.Default;

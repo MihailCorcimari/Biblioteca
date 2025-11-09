@@ -35,21 +35,21 @@ namespace Biblioteca.Models.BookViewModels
 
             var currentReservation = activeReservations
                 .FirstOrDefault(r => r.StartDate.Date <= today
-                    && (!r.EndDate.HasValue || r.EndDate.Value.Date >= today));
+                    && r.EndDate.Date >= today);
 
             var nextReservation = activeReservations
                 .FirstOrDefault(r => r.StartDate.Date > today);
 
             var availabilitySummary = "Disponível";
             var isAvailable = currentReservation == null;
-            var currentReservationEnd = currentReservation?.EndDate?.Date;
-            var hasOpenEndedReservation = currentReservation != null && !currentReservation.EndDate.HasValue;
+            var currentReservationEnd = currentReservation?.EndDate.Date;
+            var hasOpenEndedReservation = false;
 
             if (!isAvailable)
             {
                 availabilitySummary = currentReservationEnd.HasValue
                     ? $"Reservado até {currentReservationEnd.Value.ToShortDateString()}"
-                    : "Reservado (sem data de fim)";
+                     : "Reservado";
             }
             else if (nextReservation != null)
             {

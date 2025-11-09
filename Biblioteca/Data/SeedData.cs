@@ -1,5 +1,7 @@
-﻿using Biblioteca.Models;
+﻿using System;
+using Biblioteca.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Biblioteca.Data
@@ -27,8 +29,14 @@ namespace Biblioteca.Data
                 }
             }
 
-            const string adminEmail = "admin@biblioteca.local";
-            const string adminPassword = "Admin123!";
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var adminEmail = configuration["Admin:Email"];
+            var adminPassword = configuration["Admin:Password"];
+
+            if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
+            {
+                throw new InvalidOperationException("As credenciais do administrador não estão configuradas. Defina Admin:Email e Admin:Password na configuração do aplicativo.");
+            }
 
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             if (adminUser == null)

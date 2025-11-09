@@ -17,14 +17,15 @@ namespace Biblioteca.Models.ReservationViewModels
         [Display(Name = "Leitor")]
         public int ReaderId { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "A data de início é obrigatória.")]
         [DataType(DataType.Date)]
         [Display(Name = "Data de início")]
         public DateTime StartDate { get; set; } = DateTime.Today;
 
+        [Required(ErrorMessage = "A data de fim é obrigatória.")]
         [DataType(DataType.Date)]
         [Display(Name = "Data de fim")]
-        public DateTime? EndDate { get; set; }
+        public DateTime EndDate { get; set; } = DateTime.Today.AddDays(7);
 
         [Display(Name = "Estado")]
         public ReservationStatus Status { get; set; } = ReservationStatus.Pending;

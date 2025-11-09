@@ -28,9 +28,10 @@ namespace Biblioteca.Models
         [Display(Name = "Data de início")]
         public DateTime StartDate { get; set; }
 
+        [Required]
         [DataType(DataType.Date)]
         [Display(Name = "Data de fim")]
-        public DateTime? EndDate { get; set; }
+        public DateTime EndDate { get; set; }
 
         [Display(Name = "Estado")]
         public ReservationStatus Status { get; set; } = ReservationStatus.Pending;

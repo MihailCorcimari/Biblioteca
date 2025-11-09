@@ -36,7 +36,7 @@ else
                 <tr>
                     <td>@item.Book?.Title</td>
                     <td>@item.StartDate.ToString("dd/MM/yyyy")</td>
-                    <td>@item.EndDate?.ToString("dd/MM/yyyy")</td>
+                    <td>@item.EndDate.ToString("dd/MM/yyyy")</td>
                     <td>@Html.DisplayFor(modelItem => item.Status)</td>
                     <td>
                         <a asp-action="Details" asp-route-id="@item.Id">Detalhes</a>

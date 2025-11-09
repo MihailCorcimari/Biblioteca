@@ -48,10 +48,10 @@ namespace Biblioteca.Repositories
         }
 
         public async Task<bool> HasConflictingReservationAsync(
-    int bookId, DateTime startDate, DateTime? endDate, int? excludeReservationId = null)
+     int bookId, DateTime startDate, DateTime endDate, int? excludeReservationId = null)
         {
             var start = startDate.Date;
-            var effectiveEnd = (endDate ?? startDate).Date;
+            var effectiveEnd = endDate.Date;
 
             var query = _dbSet
                 .Where(r => r.BookId == bookId && r.Status != ReservationStatus.Cancelled);
@@ -63,7 +63,7 @@ namespace Biblioteca.Repositories
 
             // OVERLAP: [start, effectiveEnd] intersects [existingStart, existingEnd]
             return await query.AnyAsync(r =>
-                start <= ((r.EndDate ?? r.StartDate).Date) &&
+                start <= r.EndDate.Date &&
                 effectiveEnd >= r.StartDate.Date);
         }
     }
